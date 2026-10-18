@@ -223,40 +223,75 @@ class GameStore:
         )
 
 
+  
     def show_game_details(self, game: Game):
-        """Show the selected game's details."""
-        dialog = ft.AlertDialog(
-            modal=True,
-            title=ft.Text(game.title),
+        """Display a dedicated page for the selected game."""
+        self.current_view = "details"
+        self.selected_game = game
+
+        self.view_container.content = ft.Container(
             content=ft.Column(
                 controls=[
-                    ft.Image(
-                        src=game.cover_path,
-                        width=320,
-                        height=180,
-                        fit=ft.BoxFit.CONTAIN,
+                    ft.TextButton(
+                        "← Back to Store",
+                        on_click=lambda e: self.show_store(),
                     ),
-                    ft.Text(f"Genre: {game.genre}"),
-                    ft.Text(game.description),
-                    ft.Text(
-                        f"${game.price:.2f}",
-                        size=20,
-                        weight=ft.FontWeight.BOLD,
+                    ft.Row(
+                        controls=[
+                            ft.Container(
+                                content=ft.Image(
+                                    src=game.cover_path,
+                                    width=360,
+                                    height=250,
+                                    fit=ft.BoxFit.CONTAIN,
+                                ),
+                                bgcolor="#202428",
+                                padding=12,
+                                border_radius=6,
+                            ),
+                            ft.Column(
+                                controls=[
+                                    ft.Text(
+                                        game.title,
+                                        size=30,
+                                        weight=ft.FontWeight.BOLD,
+                                        color="#FFFFFF",
+                                    ),
+                                    ft.Text(
+                                        game.genre,
+                                        size=15,
+                                        color="#A9C9E8",
+                                    ),
+                                    ft.Divider(color="#50575E"),
+                                    ft.Text(
+                                        game.description,
+                                        size=15,
+                                        color="#CDD3D9",
+                                    ),
+                                    ft.Text(
+                                        f"${game.price:.2f}",
+                                        size=26,
+                                        weight=ft.FontWeight.BOLD,
+                                        color="#FFFFFF",
+                                    ),
+                                ],
+                                spacing=16,
+                                expand=True,
+                            ),
+                        ],
+                        vertical_alignment=ft.CrossAxisAlignment.START,
+                        spacing=24,
                     ),
                 ],
-                tight=True,
+                spacing=24,
                 scroll=ft.ScrollMode.AUTO,
+                expand=True,
             ),
-            actions=[
-                ft.TextButton(
-                    "Close",
-                    on_click=lambda e: self.page.pop_dialog(),
-                ),
-            ],
-            actions_alignment=ft.MainAxisAlignment.END,
+            padding=24,
+            expand=True,
         )
 
-        self.page.show_dialog(dialog)
+        self.view_container.update()
 
     
     def filter_games(self):
@@ -374,17 +409,20 @@ class GameStore:
 
 
     
-    def build(self):
-        """Build the main store layout."""
+    
+    def show_store(self):
+        """Display the main store page."""
+        self.current_view = "store"
+
         self.catalog_grid = ft.Row(
             controls=[
                 self.build_game_card(game)
                 for game in self.filter_games()
-    ],
-    spacing=12,
-    vertical_alignment=ft.CrossAxisAlignment.START,
-    wrap=True,
-)
+            ],
+            spacing=12,
+            vertical_alignment=ft.CrossAxisAlignment.START,
+            wrap=True,
+        )
 
         main_content = ft.Column(
             controls=[
@@ -399,26 +437,38 @@ class GameStore:
             ],
             spacing=18,
             expand=True,
+            scroll=ft.ScrollMode.AUTO,
         )
+
+        self.view_container.content = ft.Container(
+            content=ft.Row(
+                controls=[
+                    ft.Container(
+                        content=main_content,
+                        expand=True,
+                    ),
+                    self.build_sidebar(),
+                ],
+                spacing=18,
+                vertical_alignment=ft.CrossAxisAlignment.START,
+            ),
+            padding=22,
+            expand=True,
+        )
+
+        self.view_container.update()
+
+    def build(self):
+        """Build the application and its navigation area."""
+        self.view_container = ft.Container(expand=True)
 
         self.page.add(
             self.build_header(),
-            ft.Container(
-                content=ft.Row(
-                    controls=[
-                        ft.Container(
-                            content=main_content,
-                            expand=True,
-                        ),
-                        self.build_sidebar(),
-                    ],
-                    spacing=18,
-                    vertical_alignment=ft.CrossAxisAlignment.START,
-                ),
-                padding=22,
-                expand=True,
-            ),
+            self.view_container,
         )
+
+        self.show_store()
+
 
 
 
