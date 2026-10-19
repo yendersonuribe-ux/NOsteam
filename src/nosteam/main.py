@@ -122,10 +122,6 @@ class GameStore:
                     ft.Row(
                         controls=[
                             ft.TextButton(
-                                "HOME",
-                                on_click=lambda e: self.show_store(),
-                            ),
-                            ft.TextButton(
                                 "STORE",
                                 on_click=lambda e: self.show_store(),
                             ),
