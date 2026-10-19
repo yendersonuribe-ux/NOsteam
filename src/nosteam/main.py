@@ -2,7 +2,7 @@
 import flet as ft
 
 from game import Game
-
+from cart import Cart
 
 class GameStore:
     """Main class for the NOsteam game store."""
@@ -24,7 +24,7 @@ class GameStore:
         self.selected_game = None
 
         # Shopping cart and user library
-        self.cart = []
+        self.cart = Cart()
         self.library = []
 
    
@@ -85,8 +85,21 @@ class GameStore:
         self.catalog_grid.update()
 
 
+    
     def build_header(self):
         """Create the top navigation bar."""
+
+        self.cart_count = ft.Text(
+            str(len(self.cart.games)),
+            color="#FFFFFF",
+            weight=ft.FontWeight.BOLD,
+        )
+
+        self.cart_button = ft.TextButton(
+            "CART",
+            on_click=lambda e: self.show_cart(),
+        )
+
         return ft.Container(
             content=ft.Row(
                 controls=[
@@ -108,10 +121,29 @@ class GameStore:
                     ),
                     ft.Row(
                         controls=[
-                            ft.TextButton("HOME"),
-                            ft.TextButton("STORE"),
-                            ft.TextButton("NEWS"),
-                            ft.TextButton("COMMUNITY"),
+                            ft.TextButton(
+                                "HOME",
+                                on_click=lambda e: self.show_store(),
+                            ),
+                            ft.TextButton(
+                                "STORE",
+                                on_click=lambda e: self.show_store(),
+                            ),
+                            ft.TextButton(
+                                "NEWS",
+                                on_click=lambda e: self.show_news(),
+                            ),
+                            ft.TextButton(
+                                "COMMUNITY",
+                                on_click=lambda e: self.show_community(),
+                            ),
+                            ft.Row(
+                                controls=[
+                                    self.cart_button,
+                                    self.cart_count,
+                                ],
+                                spacing=4,
+                            ),
                         ],
                         spacing=4,
                     ),
@@ -127,6 +159,7 @@ class GameStore:
                 bottom=ft.BorderSide(2, "#527DA0"),
             ),
         )
+
 
     def build_welcome(self):
         """Create the store welcome panel."""
@@ -274,6 +307,11 @@ class GameStore:
                                         weight=ft.FontWeight.BOLD,
                                         color="#FFFFFF",
                                     ),
+                                    ft.Button(
+                                         "Add to Cart",
+                                         icon=ft.Icons.SHOPPING_CART,
+                                         on_click=lambda e: self.add_to_cart(game),
+                                        )
                                 ],
                                 spacing=16,
                                 expand=True,
@@ -292,6 +330,247 @@ class GameStore:
         )
 
         self.view_container.update()
+
+
+    
+    def add_to_cart(self, game: Game):
+        added = self.cart.add_game(game)
+
+        print("Juego añadido:", added)
+        print("Juegos en el carrito:", len(self.cart.games))
+
+        if not added:
+            message = "Este juego ya está en el carrito."
+        else:
+            message = f"{game.title} se añadió al carrito."
+
+        self.page.overlay.append(
+            ft.SnackBar(content=ft.Text(message))
+        )
+        self.page.overlay[-1].open = True
+
+        self.update_cart_button()
+        self.page.update()
+
+    
+    def update_cart_button(self):
+        count = len(self.cart.games)
+
+        self.cart_count.value = str(count)
+
+        print("Contador actualizado:", count)
+
+        self.page.update()
+
+
+
+    def remove_from_cart(self, game: Game):
+        self.cart.remove_game(game)
+        self.update_cart_button()
+        print("Total guardado:", len(self.cart.games))
+        print("Texto del contador:", self.cart_count.value)
+        self.show_cart()
+
+    def get_cart_total(self):
+        return self.cart.get_total()
+
+    
+  
+    def update_cart_button(self):
+        count = len(self.cart.games)
+
+        self.cart_count.value = str(count)
+        self.cart_button.text = f"CART"
+
+        print("Contador actualizado:", count)
+
+        self.page.update()
+
+
+
+    def show_cart(self):
+        """Display the shopping cart."""
+        self.current_view = "cart"
+
+        if not self.cart.games:
+            cart_content = ft.Column(
+                controls=[
+                    ft.Text(
+                        "Your cart is empty",
+                        size=24,
+                        weight=ft.FontWeight.BOLD,
+                        color="#FFFFFF",
+                    ),
+                    ft.Text(
+                        "Explore the store and add some games.",
+                        color="#CDD3D9",
+                    ),
+                ],
+                spacing=12,
+            )
+        else:
+            cart_content = ft.Column(
+                controls=[
+                    ft.Text(
+                        "YOUR SHOPPING CART",
+                        size=24,
+                        weight=ft.FontWeight.BOLD,
+                        color="#FFFFFF",
+                    ),
+                    *[
+                        ft.Row(
+                            controls=[
+                                ft.Text(
+                                    game.title,
+                                    color="#FFFFFF",
+                                    expand=True,
+                                ),
+                                ft.Text(
+                                    f"${game.price:.2f}",
+                                    color="#FFFFFF",
+                                ),
+                                ft.TextButton(
+                                    "Remove",
+                                    on_click=lambda e, selected=game:
+                                        self.remove_from_cart(selected),
+                                ),
+                            ],
+                        )
+                        for game in self.cart.games
+                    ],
+                    ft.Divider(color="#50575E"),
+                    ft.Text(
+                        f"Total: ${self.get_cart_total():.2f}",
+                        size=22,
+                        weight=ft.FontWeight.BOLD,
+                        color="#FFFFFF",
+                    ),
+                ],
+                spacing=14,
+            )
+
+        self.view_container.content = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.TextButton(
+                        "← Back to Store",
+                        on_click=lambda e: self.show_store(),
+                    ),
+                    cart_content,
+                ],
+                spacing=24,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True,
+            ),
+            padding=24,
+            expand=True,
+        )
+        self.view_container.update()
+
+
+
+
+            
+    def show_news(self):
+        self.current_view = "news"
+
+        self.view_container.content = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.TextButton(
+                        "← Back to Store",
+                        on_click=lambda e: self.show_store(),
+                    ),
+                    ft.Text(
+                        "LATEST NEWS",
+                        size=26,
+                        weight=ft.FontWeight.BOLD,
+                        color="#FFFFFF",
+                    ),
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text(
+                                    "Welcome to NOsteam",
+                                    size=19,
+                                    weight=ft.FontWeight.BOLD,
+                                    color="#FFFFFF",
+                                ),
+                                ft.Text(
+                                    "Discover our catalog of games. "
+                                    "More news and updates are coming soon.",
+                                    color="#CDD3D9",
+                                ),
+                            ],
+                            spacing=10,
+                        ),
+                        bgcolor="#292D31",
+                        padding=20,
+                        border=ft.Border.all(1, "#50575E"),
+                        border_radius=4,
+                    ),
+                ],
+                spacing=20,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True,
+            ),
+            padding=24,
+            expand=True,
+        )
+        self.view_container.update()
+
+
+
+
+    def show_community(self):
+        self.current_view = "community"
+
+        self.view_container.content = ft.Container(
+            content=ft.Column(
+                controls=[
+                    ft.TextButton(
+                        "← Back to Store",
+                        on_click=lambda e: self.show_store(),
+                    ),
+                    ft.Text(
+                        "NOsteam COMMUNITY",
+                        size=26,
+                        weight=ft.FontWeight.BOLD,
+                        color="#FFFFFF",
+                    ),
+                    ft.Container(
+                        content=ft.Column(
+                            controls=[
+                                ft.Text(
+                                    "Welcome, player!",
+                                    size=19,
+                                    weight=ft.FontWeight.BOLD,
+                                    color="#FFFFFF",
+                                ),
+                                ft.Text(
+                                    "This is the community space for NOsteam. "
+                                    "Community features will be added in the future.",
+                                    color="#CDD3D9",
+                                ),
+                            ],
+                            spacing=10,
+                        ),
+                        bgcolor="#292D31",
+                        padding=20,
+                        border=ft.Border.all(1, "#50575E"),
+                        border_radius=4,
+                    ),
+                ],
+                spacing=20,
+                scroll=ft.ScrollMode.AUTO,
+                expand=True,
+            ),
+            padding=24,
+            expand=True,
+        )
+        self.view_container.update()
+
+
 
     
     def filter_games(self):
@@ -313,11 +592,15 @@ class GameStore:
 
         return filtered_games
 
+
+
         
     def on_search_change(self, e):
         """Update the search query when the user types."""
         self.search_query = e.control.value or ""
         self.refresh_catalog()
+
+
 
 
     def build_sidebar(self):
@@ -401,6 +684,8 @@ class GameStore:
             border_radius=4,
         )
 
+
+
     
     def select_genre(self, genre: str):
         """Select a genre and refresh the catalog."""
@@ -458,6 +743,8 @@ class GameStore:
 
         self.view_container.update()
 
+
+  
     def build(self):
         """Build the application and its navigation area."""
         self.view_container = ft.Container(expand=True)
@@ -470,9 +757,14 @@ class GameStore:
         self.show_store()
 
 
-
-
 def main(page: ft.Page):
+    print("Archivo ejecutado:", __file__)
+    print("¿Existe build?:", hasattr(GameStore, "build"))
+    print("Métodos disponibles:", [
+        name for name in GameStore.__dict__
+        if not name.startswith("__")
+    ])
+
     store = GameStore(page)
     store.build()
 
